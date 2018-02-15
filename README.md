@@ -15,3 +15,16 @@ If you have a use case where you want to embed a shell script inside a binary th
 This will create a binary called *binshell*. Rename it if necessary.
 
 __Important__: Everything inside the folder *scriptFolder* will be embedded inside the binary! Only keep the minimum necessary inside that folder!
+
+# Example:
+```
+$ ls /tmp/scripts/
+hello.sh
+$ cat /tmp/scripts/hello.sh
+#!/bin/bash
+
+echo "Hello! World!"
+$ packr build .
+$ ./binshell
+Hello! World!
+```

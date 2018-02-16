@@ -10,16 +10,13 @@ import (
 	"github.com/gobuffalo/packr"
 )
 
-// const scriptFolder = "./scripts"
-const scriptName = "hello.sh"
-
 func main() {
-	box := packr.NewBox("./scripts")
+	box := packr.NewBox("PLACEHOLDER_FOLDER")
 	args := os.Args[1:]
-	if !box.Has(scriptName) {
-		log.Fatalf("Specified Script \"%s\" does not exist", scriptName)
+	if !box.Has("PLACEHOLDER_SCRIPT") {
+		log.Fatalf("Specified Script \"%s\" does not exist", "PLACEHOLDER_SCRIPT")
 	}
-	if err := runScript(box, scriptName, args); err != nil {
+	if err := runScript(box, "PLACEHOLDER_SCRIPT", args); err != nil {
 		log.Fatalf("Error running %s", err)
 	}
 }

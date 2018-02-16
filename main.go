@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/gobuffalo/packr"
 )
@@ -19,26 +19,21 @@ func main() {
 	if !box.Has(scriptName) {
 		log.Fatalf("Specified Script \"%s\" does not exist", scriptName)
 	}
-	runScript(box, scriptName)
+	if err := runScript(box, scriptName); err != nil {
+		log.Fatalf("Error running %s", err)
+	}
 }
 
-func runScript(box packr.Box, script string) error {
+func runScript(box packr.Box, path string) error {
 
-	s := box.String(scriptName)
+	tmpfile, _ := createTmpFile(box, path)
+	defer os.Remove(tmpfile.Name()) // clean up
 
-	sheBang := strings.SplitAfter(s, "\n")[0]
-	interpreter := strings.TrimSpace(strings.SplitAfter(sheBang, "!")[1])
-
-	cmd := exec.Command(interpreter)
-	stdin, err := cmd.StdinPipe()
+	cmd := exec.Command(tmpfile.Name())
+	_, err := cmd.StdinPipe()
 	if err != nil {
 		return err
 	}
-
-	go func() {
-		defer stdin.Close()
-		io.WriteString(stdin, s)
-	}()
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -47,5 +42,27 @@ func runScript(box packr.Box, script string) error {
 
 	fmt.Printf("%s", out)
 	return nil
+
+}
+
+func createTmpFile(box packr.Box, script string) (*os.File, error) {
+	content := box.Bytes(script)
+	tmpfile, err := ioutil.TempFile("", script)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if _, err := tmpfile.Write(content); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := os.Chmod(tmpfile.Name(), 0700); err != nil {
+		log.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	return tmpfile, nil
 
 }

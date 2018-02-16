@@ -10,12 +10,12 @@ import (
 	"github.com/gobuffalo/packr"
 )
 
-const scriptFolder = "/tmp/scripts"
+// const scriptFolder = "./scripts"
 const scriptName = "hello.sh"
 
 func main() {
+	box := packr.NewBox("./scripts")
 	args := os.Args[1:]
-	box := packr.NewBox(scriptFolder)
 	if !box.Has(scriptName) {
 		log.Fatalf("Specified Script \"%s\" does not exist", scriptName)
 	}

@@ -9,7 +9,8 @@ If you have a use case where you want to embed a shell script inside a binary th
 
 # Usage
 
-* Edit main.go and edit the `scriptFolder` and `scriptName` constants
+* Edit main.go and edit the `scriptName` constant and the `box := packr.NewBox("./scripts")` line
+* Run `packr`
 * Run `packr build .`
 
 This will create a binary called *binshell*. Rename it if necessary.

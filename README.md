@@ -23,8 +23,10 @@ hello.sh
 $ cat /tmp/scripts/hello.sh
 #!/bin/bash
 
-echo "Hello! World!"
+echo "Hello World! I got $@"
+
+
 $ packr build .
-$ ./binshell
-Hello! World!
+$ ./binshell aaa b cde -v 123
+Hello World! I got aaa b cde -v 123
 ```

@@ -14,22 +14,22 @@ const scriptFolder = "/tmp/scripts"
 const scriptName = "hello.sh"
 
 func main() {
-
+	args := os.Args[1:]
 	box := packr.NewBox(scriptFolder)
 	if !box.Has(scriptName) {
 		log.Fatalf("Specified Script \"%s\" does not exist", scriptName)
 	}
-	if err := runScript(box, scriptName); err != nil {
+	if err := runScript(box, scriptName, args); err != nil {
 		log.Fatalf("Error running %s", err)
 	}
 }
 
-func runScript(box packr.Box, path string) error {
+func runScript(box packr.Box, path string, args []string) error {
 
 	tmpfile, _ := createTmpFile(box, path)
 	defer os.Remove(tmpfile.Name()) // clean up
 
-	cmd := exec.Command(tmpfile.Name())
+	cmd := exec.Command(tmpfile.Name(), args...)
 	_, err := cmd.StdinPipe()
 	if err != nil {
 		return err

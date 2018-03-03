@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -27,17 +28,31 @@ func runScript(box packr.Box, path string, args []string) error {
 	defer os.Remove(tmpfile.Name()) // clean up
 
 	cmd := exec.Command(tmpfile.Name(), args...)
-	_, err := cmd.StdinPipe()
+	var stdout, stderr []byte
+	var errStdout, errStderr error
+	stdoutIn, _ := cmd.StdoutPipe()
+	stderrIn, _ := cmd.StderrPipe()
+	cmd.Start()
+
+	go func() {
+		stdout, errStdout = copyAndCapture(os.Stdout, stdoutIn)
+	}()
+
+	go func() {
+		stderr, errStderr = copyAndCapture(os.Stderr, stderrIn)
+	}()
+	err := cmd.Wait()
 	if err != nil {
-		return err
+		log.Fatalf("cmd.Run() failed with %s\n", err)
+	}
+	if errStdout != nil || errStderr != nil {
+		log.Fatalf("failed to capture stdout or stderr\n")
+	}
+	errStr := string(stderr)
+	if errStr != "" {
+		fmt.Printf("Error: %s\n", errStr)
 	}
 
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("%s", out)
 	return nil
 
 }
@@ -62,4 +77,27 @@ func createTmpFile(box packr.Box, script string) (*os.File, error) {
 
 	return tmpfile, nil
 
+}
+
+func copyAndCapture(w io.Writer, r io.Reader) ([]byte, error) {
+	var out []byte
+	buf := make([]byte, 1024, 1024)
+	for {
+		n, err := r.Read(buf[:])
+		if n > 0 {
+			d := buf[:n]
+			out = append(out, d...)
+			_, err := w.Write(d)
+			if err != nil {
+				return out, err
+			}
+		}
+		if err != nil {
+			// Read returns io.EOF at the end of file, which is not an error for us
+			if err == io.EOF {
+				err = nil
+			}
+			return out, err
+		}
+	}
 }

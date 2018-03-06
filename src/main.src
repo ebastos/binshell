@@ -7,6 +7,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
 
 	"github.com/gobuffalo/packr"
 )
@@ -32,6 +34,16 @@ func runScript(box packr.Box, path string, args []string) error {
 	var errStdout, errStderr error
 	stdoutIn, _ := cmd.StdoutPipe()
 	stderrIn, _ := cmd.StderrPipe()
+
+	//Clean-up the temp file in case it gets interrupted
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		for range c {
+			os.Remove(tmpfile.Name())
+		}
+	}()
+
 	cmd.Start()
 
 	go func() {
@@ -41,6 +53,7 @@ func runScript(box packr.Box, path string, args []string) error {
 	go func() {
 		stderr, errStderr = copyAndCapture(os.Stderr, stderrIn)
 	}()
+
 	err := cmd.Wait()
 	if err != nil {
 		log.Fatalf("cmd.Run() failed with %s\n", err)
